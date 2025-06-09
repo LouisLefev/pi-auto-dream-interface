@@ -1,147 +1,186 @@
 
-import React, { useState } from 'react';
-import { Smartphone, Bluetooth, Wifi, Cable, CheckCircle, AlertCircle } from 'lucide-react';
+import React from 'react';
+import { Smartphone, Bluetooth, Wifi, Cable, CheckCircle, AlertCircle, Battery, X } from 'lucide-react';
+import { useAndroidDevices } from '../hooks/useAndroidDevices';
 
 const AndroidAuto: React.FC = () => {
-  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  const [connectedDevice, setConnectedDevice] = useState<string | null>(null);
+  const { devices, openAutoStatus, connectDevice, disconnectDevice, removeDevice } = useAndroidDevices();
 
-  const handleConnect = (method: string) => {
-    setConnectionStatus('connecting');
-    console.log(`Tentative de connexion via ${method}`);
-    
-    // Simulation de connexion
-    setTimeout(() => {
-      setConnectionStatus('connected');
-      setConnectedDevice('Samsung Galaxy S21');
-    }, 2000);
+  const handleConnect = async (deviceId: string) => {
+    const device = devices.find(d => d.id === deviceId);
+    if (device) {
+      const success = await connectDevice(device);
+      if (success) {
+        console.log(`Connected to ${device.name} via OpenAuto`);
+      }
+    }
   };
 
-  const handleDisconnect = () => {
-    setConnectionStatus('disconnected');
-    setConnectedDevice(null);
-    console.log('Déconnexion Android Auto');
+  const handleDisconnect = async () => {
+    await disconnectDevice();
+    console.log('Disconnected from OpenAuto');
+  };
+
+  const getConnectionIcon = (type: string) => {
+    switch (type) {
+      case 'usb': return Cable;
+      case 'bluetooth': return Bluetooth;
+      case 'wifi': return Wifi;
+      default: return Smartphone;
+    }
+  };
+
+  const getConnectionColor = (type: string) => {
+    switch (type) {
+      case 'usb': return 'from-blue-500 to-blue-400';
+      case 'bluetooth': return 'from-purple-500 to-purple-400';
+      case 'wifi': return 'from-green-500 to-green-400';
+      default: return 'from-gray-500 to-gray-400';
+    }
   };
 
   return (
     <div className="h-full bg-gradient-to-br from-automotive-gray-900 to-automotive-dark p-8">
-      <h2 className="text-3xl font-bold text-white mb-8">Android Auto</h2>
+      <h2 className="text-3xl font-bold text-white mb-8">Android Auto avec OpenAuto</h2>
       
-      {connectionStatus === 'disconnected' && (
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-automotive-gray-800 rounded-2xl p-8 border border-automotive-gray-700 mb-6">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Smartphone className="w-10 h-10 text-white" />
+      {/* Statut OpenAuto */}
+      {openAutoStatus.isRunning && openAutoStatus.connectedDevice && (
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className="bg-green-900/20 border border-green-500/30 rounded-2xl p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">OpenAuto Actif</h3>
+                  <p className="text-green-400">{openAutoStatus.connectedDevice.name}</p>
+                </div>
               </div>
-              <h3 className="text-2xl font-semibold text-white mb-2">Connecter votre téléphone</h3>
-              <p className="text-gray-400">Choisissez votre méthode de connexion préférée</p>
-            </div>
-            
-            <div className="grid gap-4">
               <button
-                onClick={() => handleConnect('USB')}
-                className="flex items-center gap-4 p-6 bg-automotive-gray-700 rounded-xl hover:bg-automotive-gray-600 transition-colors border border-automotive-gray-600"
+                onClick={handleDisconnect}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Cable className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-white">Connexion USB</div>
-                  <div className="text-sm text-gray-400">Connexion rapide et stable</div>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => handleConnect('Bluetooth')}
-                className="flex items-center gap-4 p-6 bg-automotive-gray-700 rounded-xl hover:bg-automotive-gray-600 transition-colors border border-automotive-gray-600"
-              >
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Bluetooth className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-white">Bluetooth</div>
-                  <div className="text-sm text-gray-400">Connexion sans fil</div>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => handleConnect('WiFi')}
-                className="flex items-center gap-4 p-6 bg-automotive-gray-700 rounded-xl hover:bg-automotive-gray-600 transition-colors border border-automotive-gray-600"
-              >
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Wifi className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-white">WiFi Direct</div>
-                  <div className="text-sm text-gray-400">Connexion WiFi haute vitesse</div>
-                </div>
+                Déconnecter
               </button>
             </div>
           </div>
         </div>
       )}
-      
-      {connectionStatus === 'connecting' && (
-        <div className="max-w-md mx-auto text-center">
-          <div className="bg-automotive-gray-800 rounded-2xl p-8 border border-automotive-gray-700">
-            <div className="w-20 h-20 bg-gradient-to-r from-orange-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-              <Smartphone className="w-10 h-10 text-white" />
+
+      {/* Liste des appareils détectés */}
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-automotive-gray-800 rounded-2xl p-8 border border-automotive-gray-700 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full flex items-center justify-center">
+              <Smartphone className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-semibold text-white mb-4">Connexion en cours...</h3>
-            <p className="text-gray-400 mb-6">Veuillez patienter pendant la connexion à votre appareil</p>
-            <div className="w-full bg-automotive-gray-700 rounded-full h-2">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+            <div>
+              <h3 className="text-xl font-semibold text-white">Appareils détectés</h3>
+              <p className="text-gray-400">
+                {devices.length} appareil{devices.length !== 1 ? 's' : ''} trouvé{devices.length !== 1 ? 's' : ''}
+              </p>
             </div>
-          </div>
-        </div>
-      )}
-      
-      {connectionStatus === 'connected' && connectedDevice && (
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-automotive-gray-800 rounded-2xl p-8 border border-automotive-gray-700 mb-6">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-400 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-semibold text-white">Connecté</h3>
-                <p className="text-gray-400">{connectedDevice}</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-automotive-gray-700 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-green-500 mb-2">100%</div>
-                <div className="text-sm text-gray-400">Qualité signal</div>
-              </div>
-              <div className="bg-automotive-gray-700 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-blue-500 mb-2">5.0</div>
-                <div className="text-sm text-gray-400">Version AA</div>
-              </div>
-            </div>
-            
-            <button
-              onClick={handleDisconnect}
-              className="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-lg transition-colors"
-            >
-              Déconnecter
-            </button>
           </div>
           
-          {/* Interface Android Auto simulée */}
-          <div className="bg-black rounded-2xl p-8 border border-automotive-gray-700">
-            <div className="text-center text-white">
-              <h4 className="text-lg font-semibold mb-4">Interface Android Auto</h4>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-green-600 rounded-lg p-4 text-sm">Maps</div>
-                <div className="bg-blue-600 rounded-lg p-4 text-sm">Music</div>
-                <div className="bg-purple-600 rounded-lg p-4 text-sm">Phone</div>
+          {devices.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-automotive-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Smartphone className="w-8 h-8 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-medium text-white mb-2">Aucun appareil détecté</h4>
+              <p className="text-gray-400 mb-4">
+                Connectez votre téléphone Android via USB, Bluetooth ou WiFi
+              </p>
+              <div className="text-sm text-gray-500">
+                • Activez le mode développeur sur votre téléphone<br/>
+                • Autorisez le débogage USB<br/>
+                • Vérifiez que Android Auto est installé
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {devices.map((device) => {
+                const Icon = getConnectionIcon(device.connectionType);
+                const colorClass = getConnectionColor(device.connectionType);
+                
+                return (
+                  <div
+                    key={device.id}
+                    className="flex items-center justify-between p-4 bg-automotive-gray-700 rounded-xl border border-automotive-gray-600"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 bg-gradient-to-r ${colorClass} rounded-full flex items-center justify-center`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{device.name}</div>
+                        <div className="text-sm text-gray-400 flex items-center gap-2">
+                          <span className="capitalize">{device.connectionType}</span>
+                          {device.batteryLevel && (
+                            <>
+                              <span>•</span>
+                              <Battery className="w-4 h-4" />
+                              <span>{device.batteryLevel}%</span>
+                            </>
+                          )}
+                          {device.isAndroidAuto && (
+                            <>
+                              <span>•</span>
+                              <span className="text-green-400">Android Auto</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {device.isAndroidAuto && !openAutoStatus.isRunning && (
+                        <button
+                          onClick={() => handleConnect(device.id)}
+                          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+                        >
+                          Connecter
+                        </button>
+                      )}
+                      <button
+                        onClick={() => removeDevice(device.id)}
+                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Erreurs OpenAuto */}
+        {openAutoStatus.error && (
+          <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400" />
+              <div>
+                <h4 className="font-medium text-white">Erreur OpenAuto</h4>
+                <p className="text-red-400 text-sm">{openAutoStatus.error}</p>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Informations sur OpenAuto */}
+        <div className="bg-automotive-gray-800 rounded-xl p-6 border border-automotive-gray-700">
+          <h4 className="font-semibold text-white mb-3">À propos d'OpenAuto</h4>
+          <div className="text-sm text-gray-400 space-y-2">
+            <p>• Implémentation open-source d'Android Auto</p>
+            <p>• Compatible avec la plupart des téléphones Android</p>
+            <p>• Supporte la navigation, musique, et appels</p>
+            <p>• Optimisé pour Raspberry Pi</p>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
